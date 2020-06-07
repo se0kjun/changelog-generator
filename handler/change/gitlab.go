@@ -6,6 +6,8 @@ import (
 	"changelog-generator/scm"
 	"encoding/json"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type GitlabChangeLogHandler struct {
@@ -24,15 +26,19 @@ func (g *GitlabChangeLogHandler) init(c *config.Config) error {
 	g.versionHandler.Init(c)
 
 	if err != nil {
+		log.Errorf("SCM handler initialization failed")
 		return err
 	}
 
+	log.Infof("changelog path: %s", g.logDirectory)
 	return nil
 }
 
 func (g *GitlabChangeLogHandler) collectLogs() error {
+	log.Infof("gitlab changelog handler is collecting logs")
 	scmFiles, err := g.gitlabScmObject.GetFiles(g.logDirectory)
 	if err != nil {
+		log.Errorf("Cannot find following file: %s", g.logDirectory)
 		return err
 	}
 
@@ -48,6 +54,7 @@ func (g *GitlabChangeLogHandler) collectLogs() error {
 		}
 
 		if parseErr := json.Unmarshal([]byte(scmFile.FileContent), changeLog); parseErr != nil {
+			log.Errorf("json unmarshal error: %s", parseErr.Error())
 			return parseErr
 		}
 
@@ -61,6 +68,7 @@ func (g *GitlabChangeLogHandler) collectLogs() error {
 		}
 
 		if version, versionErr := g.versionHandler.GetVersion(changeLog.GetFileName()); versionErr != nil {
+			log.Errorf("Getting version number error: %s", changeLog.GetFileName())
 			return versionErr
 		} else {
 			if _, ok := g.changeLogs[version]; ok {

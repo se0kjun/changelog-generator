@@ -17,6 +17,7 @@ type ScmAction interface {
 	TagList() ([]string, error)
 	GetProject() (interface{}, error)
 	GetFiles(string) ([]ScmFile, error)
+	GetFile(string) (*ScmFile, error)
 }
 
 type ScmFile struct {

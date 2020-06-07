@@ -1,7 +1,11 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
+	"io/ioutil"
+
+	log "github.com/sirupsen/logrus"
 )
 
 /*
@@ -52,59 +56,59 @@ import (
 */
 type Config struct {
 	// local or scm
-	ProjectAccessType string
-	ProjectBasePath   string
-	OutputConfig      OutputConfig
-	ChangeLogConfig   ChangeLogGenerateConfig
-	HeaderConfig      HeaderGenerateConfig
-	ScmConfig         ScmConfig
+	ProjectAccessType string                  `json:"projectAccess"`
+	ProjectBasePath   string                  `json:"projectPath"`
+	OutputConfig      OutputConfig            `json:"outputConfig"`
+	ChangeLogConfig   ChangeLogGenerateConfig `json:"changeLogConfig"`
+	HeaderConfig      HeaderGenerateConfig    `json:"headerConfig`
+	ScmConfig         ScmConfig               `json:"scmConfig"`
 }
 
 type (
 	OutputConfig struct {
 		// stdout, file, scm
-		OutputType     string
-		OutputFilePath string
-		WritePolicy    string
+		OutputType     string `json:"outputType"`
+		OutputFilePath string `json:"outputPath"`
+		WritePolicy    string `json:"writePolicy"`
 	}
 
 	ChangeLogGenerateConfig struct {
-		ChangeLogOnly               bool
-		ChangeLogPath               string
-		MarkdownChangelogFormatFile string
-		VersionParseRule            string
-		VersionAcquisitionPolicy    string
+		ChangeLogOnly               bool   `json:"changeLogOnly"`
+		ChangeLogPath               string `json:"changeLogPath"`
+		MarkdownChangelogFormatFile string `json:"changeLogFormat"`
+		VersionParseRule            string `json:"versionParseRule"`
+		VersionAcquisitionPolicy    string `json:"versionAcquirePolicy"`
 	}
 
 	HeaderGenerateConfig struct {
-		MarkdownHeaderFormatFile string
-		ProjectName              string
-		ProjectDescription       string
+		MarkdownHeaderFormatFile string `json:"headerFormat"`
+		ProjectName              string `json:"projectName"`
+		ProjectDescription       string `json:"projectDesc"`
 	}
 
 	ScmConfig struct {
-		ScmType           string
-		ScmRepositoryInfo interface{}
-		ScmApiBaseUrl     string
-		ScmAccessToken    string
-		ScmPostAction     PostActionConfig
+		ScmType           string           `json:"scmType"`
+		ScmRepositoryInfo interface{}      `json:"scmRepositoryInfo"`
+		ScmApiBaseUrl     string           `json:"scmApiBaseUrl"`
+		ScmAccessToken    string           `json:"scmAccessToken"`
+		ScmPostAction     PostActionConfig `json:"scmPostAction"`
 	}
 
 	PostActionConfig struct {
-		RemoveChangeLogFiles bool
-		PushChangeLog        bool
-		PushRemovedFiles     bool
-		AuthorEmail          string
-		AuthorName           string
-		TargetBranch         string
-		CommitMessage        string
+		RemoveChangeLogFiles bool   `json:"removeChangeLog"`
+		PushChangeLog        bool   `json:"pushChangeLog"`
+		PushRemovedFiles     bool   `json:"pushRemoveFile"`
+		AuthorEmail          string `json:"authorEmail"`
+		AuthorName           string `json:"authorName"`
+		TargetBranch         string `json:"targetBranch"`
+		CommitMessage        string `json:"commitMessage"`
 		// AutomaticVersioning  string
 	}
 )
 
 /* project access type */
 const (
-	PROJECT_ACCESS_SCM       = "scm"
+	PROJECT_ACCESS_GITLAB    = "gitlab"
 	PROJECT_ACCESS_LOCALFILE = "localfile"
 )
 
@@ -145,7 +149,16 @@ func LoadChangeLogConfig(file string) (*Config, error) {
 	return conf, nil
 }
 
-func (c *Config) loadConfigByJson(file string) {
+func (c *Config) loadConfigByJson(file string) error {
+	log.Infof("load json configuration file: %s", file)
+	if data, err := ioutil.ReadFile(file); err != nil {
+		return err
+	} else if jsonErr := json.Unmarshal(data, c); jsonErr != nil {
+		log.Infof("fail to load json configuration file: %s", jsonErr.Error())
+		return jsonErr
+	} else {
+		return nil
+	}
 }
 
 func (c *Config) GetProjectAccessType() string {

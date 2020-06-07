@@ -5,9 +5,11 @@ import (
 	"changelog-generator/handler/change"
 	"changelog-generator/markdown"
 	"changelog-generator/scm"
+	"flag"
 	"io/ioutil"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	gitlab "github.com/xanzy/go-gitlab"
 )
 
@@ -40,18 +42,24 @@ func doScmPostAction(c *config.Config, clh change.ChangeLogBuilder, result strin
 	if scmHandler, err := scm.GetScmHandler(c); err != nil {
 		return err
 	} else {
-		commits := make([]gitlab.CommitAction, 10)
+		commits := make([]*gitlab.CommitAction, 0)
 		if c.ScmConfig.ScmPostAction.PushChangeLog {
-			commits = append(commits, gitlab.CommitAction{
-				FilePath: c.GetChangeLogPath(),
+			action := gitlab.FileUpdate
+			_, err := scmHandler.GetFile(c.GetOutputFilePath())
+			if err != nil {
+				log.Errorf("getting file error: %s, %s", c.GetOutputFilePath(), err.Error())
+				action = gitlab.FileCreate
+			}
+			commits = append(commits, &gitlab.CommitAction{
+				FilePath: c.GetOutputFilePath(),
 				Content:  result,
-				Action:   gitlab.FileUpdate,
+				Action:   action,
 			})
 		}
 		if c.ScmConfig.ScmPostAction.PushRemovedFiles {
 			for _, val := range clh.GetChangeLogInfo() {
 				for _, item := range val {
-					commits = append(commits, gitlab.CommitAction{
+					commits = append(commits, &gitlab.CommitAction{
 						FilePath: item.GetFilePath(),
 						Action:   gitlab.FileDelete,
 					})
@@ -67,35 +75,48 @@ func doScmPostAction(c *config.Config, clh change.ChangeLogBuilder, result strin
 }
 
 func main() {
-	if c, err := config.LoadChangeLogConfig(""); err != nil {
+	// load json configuration file or load flags
+	var configFile *string
+	configFile = flag.String("config", "", "json configuration file")
+	flag.Parse()
+	if c, err := config.LoadChangeLogConfig(*configFile); err != nil {
 		panic(err)
 	} else {
+		// initialize changelog handler
 		if handler, err := change.NewChangeLogHandler(c); err != nil {
 			panic(err)
 		} else {
-			// t.Log(handler.ChangeLogs)
+			// initialize markdown generator
 			if markdownGen, err := markdown.NewMarkdownGenerator(c, handler); err != nil {
 				panic(err)
 			} else {
+				// make changelog output to formatted markdown
 				if str, err := markdownGen.MakeResult(); err != nil {
 					panic(err)
 				} else {
+					// check project access type
 					switch c.GetProjectAccessType() {
-					case config.PROJECT_ACCESS_SCM:
+					case config.PROJECT_ACCESS_GITLAB:
+						// if project access type is SCM, markdown file should be executed SCM post action
+						// if SCM post action has specified, it would be pushed markdown file to remote repository
 						postActionErr := doScmPostAction(c, handler, str)
 						if postActionErr != nil {
 							panic(postActionErr)
 						}
 						break
 					case config.PROJECT_ACCESS_LOCALFILE:
+						// if project access type is LOCAL_FILE, it should be executed local file post action
+						// save as local file
 						postActionErr := doLocalFilePostAction(c, handler, str)
 						if postActionErr != nil {
 							panic(postActionErr)
 						}
 						break
 					}
+					log.Infof("generation following content: %s", str)
 				}
 			}
 		}
+		log.Infof("summary: %s changelog file successfully updated", c.GetOutputFilePath())
 	}
 }

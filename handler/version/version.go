@@ -3,6 +3,8 @@ package version
 import (
 	"changelog-generator/config"
 	"regexp"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type VersionNumber interface {
@@ -38,6 +40,7 @@ type FileBasedVersionNumber struct {
 }
 
 func (f *FileBasedVersionNumber) Init(c *config.Config) error {
+	log.Infof("filename based version initializing")
 	var err error
 	f.filenameRule = c.GetVersionParsingRule()
 	f.filenameRegexCompile, err = regexp.Compile(f.filenameRule)

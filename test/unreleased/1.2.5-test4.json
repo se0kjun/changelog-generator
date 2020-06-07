@@ -1,0 +1,10 @@
+{
+	"type": "added",
+	"description": "description",
+	"author": "author",
+	"pr": "1234",
+    "issue": "1234",
+    "userDefined": {
+        "testType": 1234
+    }
+}

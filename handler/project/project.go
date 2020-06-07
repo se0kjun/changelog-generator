@@ -1,6 +1,10 @@
 package project
 
-import "changelog-generator/config"
+import (
+	"changelog-generator/config"
+
+	log "github.com/sirupsen/logrus"
+)
 
 type ChangeLogHeader interface {
 	Init(*config.Config) error
@@ -21,6 +25,8 @@ type ConfigChangeLogHeader struct {
 func (p *ConfigChangeLogHeader) Init(c *config.Config) error {
 	p.projectDescription = c.GetProjectDescription()
 	p.projectName = c.GetProjectName()
+	log.Infof("project name: %s", p.projectName)
+	log.Infof("project description: %s", p.projectDescription)
 	return nil
 }
 

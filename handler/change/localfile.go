@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type LocalFileChangeLogHandler struct {
@@ -21,12 +23,15 @@ func (c *LocalFileChangeLogHandler) init(conf *config.Config) error {
 	c.ChangeLogs = make(map[string][]DefaultChangeLog)
 	c.versionHandler.Init(conf)
 
+	log.Infof("changelog path: %s", c.logDirectory)
 	return nil
 }
 
 func (c *LocalFileChangeLogHandler) collectLogs() error {
+	log.Infof("local file handler is collecting logs")
 	err := filepath.Walk(c.logDirectory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			log.Errorf("file walk error: %s", err.Error())
 			return err
 		}
 

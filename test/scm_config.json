@@ -1,0 +1,33 @@
+{
+    "projectAccess": "gitlab",
+    "projectPath": "",
+    "outputConfig": {
+        "outputType": "scm",
+        "outputPath": "CHANGELOG.md",
+        "writePolicy": "append"
+    },
+    "changeLogConfig": {
+        "changeLogOnly": true,
+        "changeLogPath": "test/unreleased",
+        "versionParseRule": "^\\d+\\.\\d+\\.\\d",
+        "versionAcquirePolicy": "filename"
+    },
+    "headerConfig": {
+        "projectName": "test_project",
+        "projectDesc": "project test description"
+    },
+    "scmConfig": {
+        "scmType": "gitlab",
+        "scmRepositoryInfo": "projectId",
+        "scmApiBaseUrl": "https://gitlab.com/api/v4/",
+        "scmAccessToken": "<access_token>",
+        "scmPostAction": {
+            "pushChangeLog": true,
+            "pushRemoveFile": false,
+            "authorEmail": "hong921122@gmail.com",
+            "authorName": "Seokjun Hong",
+            "targetBranch": "master",
+            "commitMessage": "test"
+        }
+    }
+}

@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 /* default */
@@ -84,18 +86,22 @@ func NewMarkdownGenerator(c *config.Config, lh change.ChangeLogBuilder) (*Markdo
 	gen.markdownPath = c.GetChangeLogFormat()
 	gen.headerMarkdownPath = c.GetHeaderFormat()
 	if gen.markdownPath == "" {
+		log.Infof("Use default changelog markdown template")
 		gen.markdownTemplate = DEFAULT_MARKDOWN_CHANGELOG_TEMPLATE
 	}
 	if gen.headerMarkdownPath == "" {
+		log.Infof("Use default header markdown template")
 		gen.headerMarkdownTemplate = DEFAULT_MARKDOWN_HEADER_TEMPLATE
 	}
 	gen.SetChangeLogHandler(lh)
 
 	gen.changeLogHeaderHandler = new(project.ConfigChangeLogHeader)
 	if err := gen.changeLogHeaderHandler.Init(c); err != nil {
+		log.Errorf("header handler initializing failed: %s", err.Error())
 		return nil, err
 	}
 	if err := gen.init(); err != nil {
+		log.Errorf("markdown generator initializing failed: %s", err.Error())
 		return nil, err
 	}
 
@@ -197,16 +203,16 @@ func (m *MarkdownGenerator) generate() (string, error) {
 }
 
 func (m *MarkdownGenerator) MakeResult() (string, error) {
-	var fileContent, markdownResult string
+	var fileContent string
 	var buffer bytes.Buffer
 
+	log.Infof("project access type is %s", m.conf.GetProjectAccessType())
 	switch m.conf.GetProjectAccessType() {
 	case config.PROJECT_ACCESS_LOCALFILE:
 		if _, err := os.Stat(m.conf.GetOutputFilePath()); os.IsNotExist(err) {
 			return m.generate()
 		}
 
-		markdownResult, _ = m.generateChangeLog()
 		data, err := ioutil.ReadFile(m.conf.GetOutputFilePath())
 		if err == nil {
 			fileContent = string(data)
@@ -214,17 +220,17 @@ func (m *MarkdownGenerator) MakeResult() (string, error) {
 			return "", err
 		}
 		break
-	case config.PROJECT_ACCESS_SCM:
+	case config.PROJECT_ACCESS_GITLAB:
 		scmAction, err := scm.GetScmHandler(m.conf)
 		if err != nil {
 			return "", err
 		}
-		files, fileErr := scmAction.GetFiles(m.conf.GetOutputFilePath())
+		file, fileErr := scmAction.GetFile(m.conf.GetOutputFilePath())
 		if fileErr != nil {
 			// file doesn't exist
 			return m.generate()
 		}
-		fileContent = files[0].FileContent
+		fileContent = file.FileContent
 		break
 	default:
 		return "", errors.New("Not found access type")
@@ -236,6 +242,8 @@ func (m *MarkdownGenerator) MakeResult() (string, error) {
 	}
 	idx += len("---")
 
+	log.Infof("output file policy: %s", m.conf.GetWritePolicy())
+	markdownResult, _ := m.generateChangeLog()
 	switch m.conf.GetWritePolicy() {
 	case config.PREPEND:
 		buffer.WriteString(fileContent[:idx])

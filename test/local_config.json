@@ -1,0 +1,35 @@
+{
+    "projectPath": "",
+    "outputConfig": {
+        "outputType": "",
+        "outputPath": "",
+        "writePolicy": ""
+    },
+    "changeLogConfig": {
+        "changeLogOnly": false,
+        "changeLogPath": "",
+        "changeLogFormat": "",
+        "versionParseRule": "",
+        "versionAcquirePolicy": ""
+    },
+    "HeaderConfig": {
+        "headerFormat": "",
+        "projectName": "",
+        "projectDesc": ""
+    },
+    "scmConfig": {
+        "scmType": "",
+        "scmRepositoryInfo": null,
+        "scmApiBaseUrl": "",
+        "scmAccessToken": "",
+        "scmPostAction": {
+            "removeChangeLog": false,
+            "pushChangeLog": false,
+            "pushRemoveFile": false,
+            "authorEmail": "",
+            "authorName": "",
+            "targetBranch": "",
+            "commitMessage": ""
+        }
+    }
+}

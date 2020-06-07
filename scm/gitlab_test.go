@@ -44,9 +44,9 @@ func TestGetFiles(t *testing.T) {
 	c := &config.Config{
 		ScmConfig: config.ScmConfig{
 			ScmType:           "gitlab",
-			ScmAccessToken:    "<secret_access_token>",
+			ScmAccessToken:    "<access_token>",
 			ScmApiBaseUrl:     "https://gitlab.com/api/v4/",
-			ScmRepositoryInfo: "project_with_namespace",
+			ScmRepositoryInfo: "projectId",
 			ScmPostAction: config.PostActionConfig{
 				TargetBranch:  "master",
 				AuthorEmail:   "hong921122@gmail.com",
@@ -63,6 +63,32 @@ func TestGetFiles(t *testing.T) {
 			fmt.Println(file.FilePath)
 			fmt.Println(file.FileContent)
 		}
+	} else {
+		fmt.Println(err)
+	}
+}
+
+func TestGetFile(t *testing.T) {
+	c := &config.Config{
+		ScmConfig: config.ScmConfig{
+			ScmType:           "gitlab",
+			ScmAccessToken:    "<access_token>",
+			ScmApiBaseUrl:     "https://gitlab.com/api/v4/",
+			ScmRepositoryInfo: "projectId",
+			ScmPostAction: config.PostActionConfig{
+				TargetBranch:  "master",
+				AuthorEmail:   "hong921122@gmail.com",
+				AuthorName:    "Seokjun Hong",
+				CommitMessage: "Create README",
+			},
+		},
+	}
+
+	scmAction, _ := GetScmHandler(c)
+	file, err := scmAction.GetFile("README.md")
+	if err == nil {
+		fmt.Println(file.FilePath)
+		fmt.Println(file.FileContent)
 	} else {
 		fmt.Println(err)
 	}

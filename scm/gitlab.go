@@ -5,6 +5,7 @@ import (
 	b64 "encoding/base64"
 	"errors"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -42,7 +43,8 @@ func (g *GitlabScm) Commit(item interface{}, message string) error {
 	}
 	opt.Actions = append(opt.Actions, tmp)
 	_, res, err := g.gitlabClient.Commits.CreateCommit(g.projectIdentifier, opt, nil)
-	if res.StatusCode != 200 {
+	if res.StatusCode != 200 && err != nil {
+		log.Errorf("gitlab failed to push remote repository: %s", res.Status)
 		return err
 	}
 
@@ -63,7 +65,8 @@ func (g *GitlabScm) Commits(item interface{}, message string) error {
 		Actions:       commitActions,
 	}
 	_, res, err := g.gitlabClient.Commits.CreateCommit(g.projectIdentifier, opt, nil)
-	if res.StatusCode != 200 {
+	if res.StatusCode != 200 && err != nil {
+		log.Errorf("gitlab failed to push remote repository: %s", res.Status)
 		return err
 	}
 
@@ -89,9 +92,13 @@ func (g *GitlabScm) GetFiles(path string) ([]ScmFile, error) {
 		Ref:  &g.targetBranch,
 	}
 
-	nodes, _, err := g.gitlabClient.Repositories.ListTree(g.projectIdentifier, opt, nil)
+	nodes, res, err := g.gitlabClient.Repositories.ListTree(g.projectIdentifier, opt, nil)
 	if err != nil {
 		return nil, err
+	}
+	if len(nodes) == 0 {
+		log.Errorf("file with name doesn't exist: %s", res.Status)
+		return nil, errors.New("Not found file")
 	}
 	for _, file := range nodes {
 		fileOpt := &gitlab.GetFileOptions{
@@ -113,4 +120,23 @@ func (g *GitlabScm) GetFiles(path string) ([]ScmFile, error) {
 	}
 
 	return scmFiles, nil
+}
+
+func (g *GitlabScm) GetFile(file string) (*ScmFile, error) {
+	fileOpt := &gitlab.GetFileOptions{
+		Ref: &g.targetBranch,
+	}
+
+	fileObj, _, err := g.gitlabClient.RepositoryFiles.GetFile(g.projectIdentifier, file, fileOpt, nil)
+	if err == nil {
+		content, _ := b64.StdEncoding.DecodeString(fileObj.Content)
+
+		return &ScmFile{
+			FilePath:    fileObj.FilePath,
+			FileName:    fileObj.FileName,
+			FileContent: string(content),
+		}, nil
+	} else {
+		return nil, err
+	}
 }

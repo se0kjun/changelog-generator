@@ -2,6 +2,8 @@ package change
 
 import (
 	"changelog-generator/config"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ChangeLogBuilder interface {
@@ -48,12 +50,15 @@ type DefaultChangeLog struct {
 }
 
 func NewChangeLogHandler(c *config.Config) (ChangeLogBuilder, error) {
+	log.Infof("project access type is %s", c.GetProjectAccessType())
 	if err := ChangeLogMakerMap[c.GetProjectAccessType()].init(c); err != nil {
+		log.Errorf("changelog handler initialization failed: %s", err.Error())
 		return nil, err
 	}
 
 	logHandler := ChangeLogMakerMap[c.GetProjectAccessType()]
 	if err := logHandler.collectLogs(); err != nil {
+		log.Errorf("collect changelog failed: %s", err.Error())
 		return nil, err
 	}
 

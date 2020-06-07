@@ -1,0 +1,7 @@
+{
+	"type": "security",
+	"description": "CVE-123123",
+	"author": "seokjun",
+	"pr": "123554",
+	"issue": "125534"
+}
