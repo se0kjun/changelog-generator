@@ -2,6 +2,7 @@ package change
 
 import (
 	"changelog-generator/config"
+	changelog_err "changelog-generator/errors"
 	"changelog-generator/handler/version"
 	"encoding/json"
 	"io/ioutil"
@@ -18,10 +19,16 @@ type LocalFileChangeLogHandler struct {
 }
 
 func (c *LocalFileChangeLogHandler) init(conf *config.Config) error {
+	if _, ok := version.VersionHandlerMap[conf.GetVersionAcquisitionPolicy()]; !ok {
+		return changelog_err.NOT_FOUND_VERSION_TYPE
+	}
+
 	c.logDirectory = conf.GetChangeLogPath()
 	c.versionHandler = version.VersionHandlerMap[conf.GetVersionAcquisitionPolicy()]
 	c.ChangeLogs = make(map[string][]DefaultChangeLog)
-	c.versionHandler.Init(conf)
+	if err := c.versionHandler.Init(conf); err != nil {
+		return err
+	}
 
 	log.Infof("changelog path: %s", c.logDirectory)
 	return nil

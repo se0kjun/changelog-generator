@@ -2,6 +2,7 @@ package version
 
 import (
 	"changelog-generator/config"
+	changelog_err "changelog-generator/errors"
 	"regexp"
 
 	log "github.com/sirupsen/logrus"
@@ -13,24 +14,10 @@ type VersionNumber interface {
 }
 
 var VersionHandlerMap = map[string]VersionNumber{
-	// command line
-	"default": &DefaultVersionNumber{},
 	// file name
-	"filename": &FileBasedVersionNumber{},
+	config.VERSION_GET_FILENAME: &FileBasedVersionNumber{},
 	// git tag
-	"scm-tag": &TagBasedVersionNumber{},
-}
-
-/* DefaultVersionNumber */
-type DefaultVersionNumber struct {
-}
-
-func (f *DefaultVersionNumber) Init(c *config.Config) error {
-	return nil
-}
-
-func (f *DefaultVersionNumber) GetVersion(item interface{}) (string, error) {
-	return "", nil
+	config.VERSION_GET_SCM_TAG: &TagBasedVersionNumber{},
 }
 
 /* FileBasedVersionNumber */
@@ -52,9 +39,16 @@ func (f *FileBasedVersionNumber) Init(c *config.Config) error {
 }
 
 func (f *FileBasedVersionNumber) GetVersion(item interface{}) (string, error) {
-	changelog := item.(string)
-
-	return f.filenameRegexCompile.FindString(changelog), nil
+	switch tmp := item.(type) {
+	case string:
+		if res := f.filenameRegexCompile.FindString(tmp); res == "" {
+			return "", changelog_err.FAIL_TO_GET_VERSION
+		} else {
+			return res, nil
+		}
+	default:
+		return "", changelog_err.FAIL_TO_GET_VERSION
+	}
 }
 
 /* TagBasedVersionNumber */

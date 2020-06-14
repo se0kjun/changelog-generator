@@ -2,8 +2,9 @@ package scm
 
 import (
 	"changelog-generator/config"
+	changelog_err "changelog-generator/errors"
 	b64 "encoding/base64"
-	"errors"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
@@ -30,6 +31,10 @@ func (g *GitlabScm) Init(c *config.Config) error {
 }
 
 func (g *GitlabScm) Commit(item interface{}, message string) error {
+	if g.gitlabClient == nil {
+		return changelog_err.SCM_NOT_INITIALIZED
+	}
+
 	tmp := item.(*gitlab.CommitAction)
 	authorEmail := g.conf.GetAuthorEmail()
 	authorName := g.conf.GetAuthorName()
@@ -52,6 +57,10 @@ func (g *GitlabScm) Commit(item interface{}, message string) error {
 }
 
 func (g *GitlabScm) Commits(item interface{}, message string) error {
+	if g.gitlabClient == nil {
+		return changelog_err.SCM_NOT_INITIALIZED
+	}
+
 	commitActions := item.([]*gitlab.CommitAction)
 	authorEmail := g.conf.GetAuthorEmail()
 	authorName := g.conf.GetAuthorName()
@@ -77,7 +86,7 @@ func (g *GitlabScm) TagList() ([]string, error) {
 	if g.gitlabProject != nil {
 		return g.gitlabProject.TagList, nil
 	} else {
-		return []string{}, errors.New("Not initialized")
+		return []string{}, changelog_err.SCM_NOT_INITIALIZED
 	}
 }
 
@@ -86,6 +95,10 @@ func (g *GitlabScm) GetProject() (interface{}, error) {
 }
 
 func (g *GitlabScm) GetFiles(path string) ([]ScmFile, error) {
+	if g.gitlabClient == nil {
+		return nil, changelog_err.SCM_NOT_INITIALIZED
+	}
+
 	scmFiles := make([]ScmFile, 1)
 	opt := &gitlab.ListTreeOptions{
 		Path: &path,
@@ -98,8 +111,9 @@ func (g *GitlabScm) GetFiles(path string) ([]ScmFile, error) {
 	}
 	if len(nodes) == 0 {
 		log.Errorf("file with name doesn't exist: %s", res.Status)
-		return nil, errors.New("Not found file")
+		return nil, fmt.Errorf(changelog_err.NOT_FOUND_PATH.Error(), path)
 	}
+
 	for _, file := range nodes {
 		fileOpt := &gitlab.GetFileOptions{
 			Ref: &g.targetBranch,

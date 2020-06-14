@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"flag"
 	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
@@ -127,26 +126,27 @@ const (
 
 func LoadChangeLogConfig(file string) (*Config, error) {
 	conf := &Config{}
-	if file != "" {
-		conf.loadConfigByJson(file)
+	if err := conf.loadConfigByJson(file); err != nil {
+		return nil, err
+	} else {
 		return conf, nil
 	}
 
-	flag.StringVar(&conf.ChangeLogConfig.ChangeLogPath, "path", "", "change log information")
-	flag.StringVar(&conf.ChangeLogConfig.MarkdownChangelogFormatFile, "changeformat", "", "markdown changelog format file")
-	flag.StringVar(&conf.ChangeLogConfig.VersionParseRule, "versionrule", "^\\d+\\.\\d+\\.\\d", "version parsing rule")
-	flag.StringVar(&conf.ChangeLogConfig.VersionAcquisitionPolicy, "versionacquisition", "filename", "version parsing rule")
-	flag.BoolVar(&conf.ChangeLogConfig.ChangeLogOnly, "changelog-only", false, "generate changelog only")
+	// flag.StringVar(&conf.ChangeLogConfig.ChangeLogPath, "path", "", "change log information")
+	// flag.StringVar(&conf.ChangeLogConfig.MarkdownChangelogFormatFile, "changeformat", "", "markdown changelog format file")
+	// flag.StringVar(&conf.ChangeLogConfig.VersionParseRule, "versionrule", "^\\d+\\.\\d+\\.\\d", "version parsing rule")
+	// flag.StringVar(&conf.ChangeLogConfig.VersionAcquisitionPolicy, "versionacquisition", "filename", "version parsing rule")
+	// flag.BoolVar(&conf.ChangeLogConfig.ChangeLogOnly, "changelog-only", false, "generate changelog only")
 
-	flag.StringVar(&conf.HeaderConfig.MarkdownHeaderFormatFile, "headerformat", "", "markdown header format file")
-	flag.StringVar(&conf.HeaderConfig.ProjectDescription, "project-description", "", "project description")
-	flag.StringVar(&conf.HeaderConfig.ProjectName, "project-name", "", "project name")
+	// flag.StringVar(&conf.HeaderConfig.MarkdownHeaderFormatFile, "headerformat", "", "markdown header format file")
+	// flag.StringVar(&conf.HeaderConfig.ProjectDescription, "project-description", "", "project description")
+	// flag.StringVar(&conf.HeaderConfig.ProjectName, "project-name", "", "project name")
 
-	flag.StringVar(&conf.OutputConfig.OutputFilePath, "o", "./CHANGELOG.md", "generate markdown file on the specified path")
+	// flag.StringVar(&conf.OutputConfig.OutputFilePath, "o", "./CHANGELOG.md", "generate markdown file on the specified path")
 
-	flag.Parse()
+	// flag.Parse()
 
-	return conf, nil
+	// return conf, nil
 }
 
 func (c *Config) loadConfigByJson(file string) error {

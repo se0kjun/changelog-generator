@@ -80,19 +80,19 @@ func main() {
 	configFile = flag.String("config", "", "json configuration file")
 	flag.Parse()
 	if c, err := config.LoadChangeLogConfig(*configFile); err != nil {
-		panic(err)
+		log.Fatalf("fail to load configuration: %s", err)
 	} else {
 		// initialize changelog handler
 		if handler, err := change.NewChangeLogHandler(c); err != nil {
-			panic(err)
+			log.Fatalf("fail to initialize change log handler: %s", err)
 		} else {
 			// initialize markdown generator
 			if markdownGen, err := markdown.NewMarkdownGenerator(c, handler); err != nil {
-				panic(err)
+				log.Fatalf("fail to initialize markdown generator: %s", err)
 			} else {
 				// make changelog output to formatted markdown
 				if str, err := markdownGen.MakeResult(); err != nil {
-					panic(err)
+					log.Fatalf("fail to make markdown result: %s", err)
 				} else {
 					// check project access type
 					switch c.GetProjectAccessType() {
@@ -101,7 +101,7 @@ func main() {
 						// if SCM post action has specified, it would be pushed markdown file to remote repository
 						postActionErr := doScmPostAction(c, handler, str)
 						if postActionErr != nil {
-							panic(postActionErr)
+							log.Fatalf("fail to scm post action: %s", postActionErr)
 						}
 						break
 					case config.PROJECT_ACCESS_LOCALFILE:
@@ -109,7 +109,7 @@ func main() {
 						// save as local file
 						postActionErr := doLocalFilePostAction(c, handler, str)
 						if postActionErr != nil {
-							panic(postActionErr)
+							log.Fatalf("fail to local post action: %s", postActionErr)
 						}
 						break
 					}

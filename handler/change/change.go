@@ -2,6 +2,7 @@ package change
 
 import (
 	"changelog-generator/config"
+	changelog_err "changelog-generator/errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -13,8 +14,8 @@ type ChangeLogBuilder interface {
 }
 
 var ChangeLogMakerMap = map[string]ChangeLogBuilder{
-	"localfile": &LocalFileChangeLogHandler{},
-	"gitlab":    &GitlabChangeLogHandler{},
+	config.PROJECT_ACCESS_LOCALFILE: &LocalFileChangeLogHandler{},
+	config.PROJECT_ACCESS_GITLAB:    &GitlabChangeLogHandler{},
 }
 
 /*
@@ -51,6 +52,10 @@ type DefaultChangeLog struct {
 
 func NewChangeLogHandler(c *config.Config) (ChangeLogBuilder, error) {
 	log.Infof("project access type is %s", c.GetProjectAccessType())
+	if _, ok := ChangeLogMakerMap[c.GetProjectAccessType()]; !ok {
+		return nil, changelog_err.NOT_FOUND_ACCESS_TYPE
+	}
+
 	if err := ChangeLogMakerMap[c.GetProjectAccessType()].init(c); err != nil {
 		log.Errorf("changelog handler initialization failed: %s", err.Error())
 		return nil, err

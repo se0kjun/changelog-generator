@@ -2,6 +2,7 @@ package change
 
 import (
 	"changelog-generator/config"
+	changelog_err "changelog-generator/errors"
 	"changelog-generator/handler/version"
 	"changelog-generator/scm"
 	"encoding/json"
@@ -19,14 +20,17 @@ type GitlabChangeLogHandler struct {
 
 func (g *GitlabChangeLogHandler) init(c *config.Config) error {
 	var err error
-	g.gitlabScmObject, err = scm.GetScmHandler(c)
+	if _, ok := version.VersionHandlerMap[c.GetVersionAcquisitionPolicy()]; !ok {
+		return changelog_err.NOT_FOUND_VERSION_TYPE
+	}
+
+	if g.gitlabScmObject, err = scm.GetScmHandler(c); err != nil {
+		return err
+	}
 	g.logDirectory = c.GetChangeLogPath()
 	g.versionHandler = version.VersionHandlerMap[c.GetVersionAcquisitionPolicy()]
 	g.changeLogs = make(map[string][]DefaultChangeLog)
-	g.versionHandler.Init(c)
-
-	if err != nil {
-		log.Errorf("SCM handler initialization failed")
+	if err = g.versionHandler.Init(c); err != nil {
 		return err
 	}
 

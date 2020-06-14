@@ -3,10 +3,10 @@ package markdown
 import (
 	"bytes"
 	"changelog-generator/config"
+	changelog_err "changelog-generator/errors"
 	"changelog-generator/handler/change"
 	"changelog-generator/handler/project"
 	"changelog-generator/scm"
-	"errors"
 	"html/template"
 	"io/ioutil"
 	"os"
@@ -95,7 +95,12 @@ func NewMarkdownGenerator(c *config.Config, lh change.ChangeLogBuilder) (*Markdo
 	}
 	gen.SetChangeLogHandler(lh)
 
-	gen.changeLogHeaderHandler = new(project.ConfigChangeLogHeader)
+	if ch, ok := project.ChangeLogHeaderHandler[c.GetProjectAccessType()]; ok {
+		gen.changeLogHeaderHandler = ch
+	} else {
+		return nil, changelog_err.NOT_FOUND_ACCESS_TYPE
+	}
+
 	if err := gen.changeLogHeaderHandler.Init(c); err != nil {
 		log.Errorf("header handler initializing failed: %s", err.Error())
 		return nil, err
@@ -233,12 +238,12 @@ func (m *MarkdownGenerator) MakeResult() (string, error) {
 		fileContent = file.FileContent
 		break
 	default:
-		return "", errors.New("Not found access type")
+		return "", changelog_err.NOT_FOUND_ACCESS_TYPE
 	}
 
 	idx := strings.Index(fileContent, "---")
 	if idx < 0 {
-		return "", errors.New("Not found delimeter '---'")
+		return "", changelog_err.NOT_FOUND_DELIMETER
 	}
 	idx += len("---")
 
